@@ -23,7 +23,8 @@ func NewHTTPHandler(db *sql.DB) http.Handler {
 	bookService := bookDomain.NewService(bookRepo)
 	bookHandler := bookHandler.NewHandler(bookService)
 
-	router.Get(fmt.Sprintf("%s/get-books", BOOK_BASE_URL), bookHandler.GetBooks)
+	router.Get(fmt.Sprintf("%s/get-books", BOOK_BASE_URL), bookHandler.GetAllBooks)
+	router.Get(fmt.Sprintf("%s/get-books/{bookID}", BOOK_BASE_URL), bookHandler.GetBookByID)
 
 	return router
 }
