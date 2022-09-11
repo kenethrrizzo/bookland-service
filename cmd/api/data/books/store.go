@@ -11,6 +11,8 @@ import (
 
 const (
 	createError       = "error creando un nuevo libro"
+	updateError       = "error actualizando el libro"
+	deleteError       = "error eliminando libro"
 	readError         = "error buscando un libro en la base de datos"
 	listError         = "error obteniendo libros de la base de datos"
 	lastInsertIDError = "error obteniendo último ID insertado"
@@ -94,4 +96,33 @@ func (s *Store) CreateBook(book *books.Book) (*books.Book, error) {
 	book.Id = int(lastId)
 
 	return book, nil
+}
+
+func (s *Store) UpdateBookCoverImage(id int, newCoverPageURI string) (*books.Book, error) {
+	sqlUpdate := "UPDATE Book SET CoverPage = ? WHERE Id = ?"
+
+	_, err := s.db.Exec(sqlUpdate, newCoverPageURI, id)
+	if err != nil {
+		appErr := domainErrors.NewAppError(errors.Wrap(err, updateError), domainErrors.RepositoryError)
+		return nil, appErr
+	}
+
+	book, err := s.GetBookByID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	return book, nil
+}
+
+func (s *Store) DeleteBook(id int) error {
+	sqlDelete := "UPDATE Book SET Status = ? WHERE Id = ?"
+
+	_, err := s.db.Exec(sqlDelete, "I", id)
+	if err != nil {
+		appErr := domainErrors.NewAppError(errors.Wrap(err, deleteError), domainErrors.RepositoryError)
+		return appErr
+	}
+
+	return nil
 }

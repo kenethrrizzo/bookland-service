@@ -7,7 +7,7 @@ import (
 	domainErrors "github.com/kenethrrizzo/bookland-service/cmd/api/domain/errors"
 )
 
-type ErrorResponse struct {
+type MessageResponse struct {
 	Message string `json:"message"`
 }
 
@@ -24,7 +24,7 @@ func Error(w http.ResponseWriter, err error) {
 	appErr, ok := err.(*domainErrors.AppError)
 
 	if ok {
-		errResponse := ErrorResponse{
+		errResponse := MessageResponse{
 			Message: appErr.Err.Error(),
 		}
 
@@ -35,7 +35,7 @@ func Error(w http.ResponseWriter, err error) {
 			JSON(w, http.StatusInternalServerError, errResponse)
 		}
 	} else {
-		errResponse := ErrorResponse{
+		errResponse := MessageResponse{
 			Message: "Internal Server Error",
 		}
 		JSON(w, http.StatusInternalServerError, errResponse)

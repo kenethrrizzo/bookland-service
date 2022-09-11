@@ -8,3 +8,7 @@ type BookResponse struct {
 	Synopsis  string  `json:"synopsis"`
 	Price     float64 `json:"price"`
 }
+
+type MessageResponse struct {
+	Message string `json:"message"`
+}

@@ -65,13 +65,55 @@ func (handl *BookHandler) RegisterNewBook(w http.ResponseWriter, r *http.Request
 
 	book := bookRequestToBookDomain(&request)
 
-	bookWithID, err := handl.service.RegisterNewBook(book)
+	bookDomain, err := handl.service.RegisterNewBook(book)
 	if err != nil {
 		httpUtil.Error(w, err)
 		return
 	}
 
-	response := bookDomaintoBookResponse(bookWithID)
+	response := bookDomaintoBookResponse(bookDomain)
+
+	httpUtil.JSON(w, http.StatusCreated, response)
+}
+
+func (handl *BookHandler) UpdateBookCoverImage(w http.ResponseWriter, r *http.Request) {
+	var request BookRequest
+
+	err := json.NewDecoder(r.Body).Decode(&request)
+	if err != nil {
+		httpUtil.Error(w, err)
+		return
+	}
+
+	bookDomain, err := handl.service.UpdateBookCoverImage(request.Id, request.Coverpage)
+	if err != nil {
+		httpUtil.Error(w, err)
+		return
+	}
+
+	response := bookDomaintoBookResponse(bookDomain)
+
+	httpUtil.JSON(w, http.StatusOK, response)
+}
+
+func (handl *BookHandler) DeleteBook(w http.ResponseWriter, r *http.Request) {
+	bookIDstr := chi.URLParam(r, "bookID")
+
+	bookID, err := strconv.Atoi(bookIDstr)
+	if err != nil {
+		httpUtil.Error(w, err)
+		return
+	}
+
+	err = handl.service.DeleteBook(bookID)
+	if err != nil {
+		httpUtil.Error(w, err)
+		return
+	}
+
+	response := httpUtil.MessageResponse{
+		Message: "deleted!",
+	}
 
 	httpUtil.JSON(w, http.StatusOK, response)
 }
