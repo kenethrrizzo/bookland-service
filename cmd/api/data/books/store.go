@@ -71,5 +71,22 @@ func (s *Store) GetBookByID(id int) (*books.Book, error) {
 }
 
 func (s *Store) CreateBook(book *books.Book) (*books.Book, error) {
-	return nil, nil
+	sqlInsert := "INSERT INTO Book (Name, Author, CoverPage, Price) values (?, ?, ?, ?)"
+
+	bookEntity := toDBModel(book)
+
+	res, err := s.db.Exec(sqlInsert, bookEntity.Name, bookEntity.Author, bookEntity.CoverPage, bookEntity.Price)
+	if err != nil {
+		log.Println("ha ocurrido un error al insertar un nuevo libro: ", err)
+		return nil, err
+	}
+
+	lastId, err := res.LastInsertId()
+	if err != nil {
+		log.Println("ha ocurrido un error al obtener el ultimo id insertado: ", err)
+	}
+
+	book.Id = int(lastId)
+
+	return book, nil
 }

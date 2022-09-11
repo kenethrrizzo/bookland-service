@@ -7,3 +7,8 @@ type BookResponse struct {
 	Synopsis  string  `json:"synopsis"`
 	Price     float64 `json:"price"`
 }
+
+type BookCreatedResponse struct {
+	Id   int    `json:"id"`
+	Name string `json:"name"`
+}

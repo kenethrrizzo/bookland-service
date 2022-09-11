@@ -18,6 +18,8 @@ func NewHandler(svc books.BookService) *BookHandler {
 	return &BookHandler{svc}
 }
 
+// TODO: Refactorizar código
+
 func (handl *BookHandler) GetAllBooks(w http.ResponseWriter, r *http.Request) {
 	results, err := handl.service.GetAllBooks()
 	if err != nil {
@@ -74,6 +76,43 @@ func (handl *BookHandler) GetBookByID(w http.ResponseWriter, r *http.Request) {
 		CoverPage: result.CoverPage,
 		Synopsis:  result.Synopsis,
 		Price:     result.Price,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		log.Println("ha ocurrido un error al enviar respuesta: ", err)
+		// TODO: Implementar manejo de errores como respuesta
+	}
+}
+
+func (handl *BookHandler) RegisterNewBook(w http.ResponseWriter, r *http.Request) {
+	var request BookRequest
+
+	err := json.NewDecoder(r.Body).Decode(&request)
+	if err != nil {
+		log.Println("ha ocurrido un error al decodificar la solicitud: ", err)
+		// TODO: Implementar manejo de errores como respuesta
+	}
+
+	book := &books.Book{
+		Name:      request.Name,
+		Author:    request.Author,
+		CoverPage: request.Coverpage,
+		Synopsis:  request.Synopsis,
+		Price:     request.Price,
+	}
+
+	bookWithID, err := handl.service.RegisterNewBook(book)
+	if err != nil {
+		log.Println("ha ocurrido un error al registrar un nuevo libro: ", err)
+		// TODO: Implementar manejo de errores como respuesta
+	}
+
+	response := &BookCreatedResponse{
+		Id:   bookWithID.Id,
+		Name: bookWithID.Name,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

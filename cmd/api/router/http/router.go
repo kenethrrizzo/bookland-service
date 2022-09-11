@@ -25,6 +25,7 @@ func NewHTTPHandler(db *sql.DB) http.Handler {
 
 	router.Get(fmt.Sprintf("%s/get-books", BOOK_BASE_URL), bookHandler.GetAllBooks)
 	router.Get(fmt.Sprintf("%s/get-books/{bookID}", BOOK_BASE_URL), bookHandler.GetBookByID)
+	router.Post(fmt.Sprintf("%s/register-book", BOOK_BASE_URL), bookHandler.RegisterNewBook)
 
 	return router
 }
