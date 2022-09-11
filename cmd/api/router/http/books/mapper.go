@@ -1,6 +1,8 @@
 package books
 
-import "github.com/kenethrrizzo/bookland-service/cmd/api/domain/books"
+import (
+	"github.com/kenethrrizzo/bookland-service/cmd/api/domain/books"
+)
 
 func bookDomaintoBookResponse(book *books.Book) *BookResponse {
 	return &BookResponse{
@@ -14,6 +16,8 @@ func bookDomaintoBookResponse(book *books.Book) *BookResponse {
 }
 
 func bookRequestToBookDomain(bookRequest *BookRequest) *books.Book {
+	// TODO: Validar request para que lleguen parámetros requeridos (Name, Author, Price)
+
 	return &books.Book{
 		Name:      bookRequest.Name,
 		Author:    bookRequest.Author,
