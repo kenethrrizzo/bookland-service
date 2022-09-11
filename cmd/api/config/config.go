@@ -1,8 +1,6 @@
 package config
 
 import (
-	"log"
-
 	"github.com/spf13/viper"
 )
 
@@ -17,12 +15,12 @@ func LoadConfig() Config {
 
 	err := vi.ReadInConfig()
 	if err != nil {
-		log.Fatalln("ha ocurrido un error al leer la configuración: ", err)
+		panic(err)
 	}
 
 	err = vi.Unmarshal(&config)
 	if err != nil {
-		log.Fatalln("ha ocurrido un error al crear estructura de configuración: ", err)
+		panic(err)
 	}
 
 	return config

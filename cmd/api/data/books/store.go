@@ -2,10 +2,18 @@ package books
 
 import (
 	"database/sql"
-	"log"
-	"strconv"
+
+	"github.com/pkg/errors"
 
 	"github.com/kenethrrizzo/bookland-service/cmd/api/domain/books"
+	domainErrors "github.com/kenethrrizzo/bookland-service/cmd/api/domain/errors"
+)
+
+const (
+	createError       = "error creando un nuevo libro"
+	readError         = "error buscando un libro en la base de datos"
+	listError         = "error obteniendo libros de la base de datos"
+	lastInsertIDError = "error obteniendo último ID insertado"
 )
 
 type Store struct {
@@ -22,52 +30,48 @@ func (s *Store) GetAllBooks() ([]books.Book, error) {
 	res, err := s.db.Query(sqlSelect)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			log.Println("no se ha encontrado un registro en la base de datos", err)
-			return nil, err
-			// TODO: Implementar errores personalizados
+			appErr := domainErrors.NewAppErrorWithType(domainErrors.NotFound)
+			return nil, appErr
 		}
-		log.Fatalln("ha ocurrido un error al obtener libros: ", err)
-		return nil, err
-		// TODO: Implementar errores personalizados
+		appErr := domainErrors.NewAppError(errors.Wrap(err, listError), domainErrors.RepositoryError)
+		return nil, appErr
 	}
+
 	defer res.Close()
 
-	var booksRes []books.Book
+	var booksDomain []books.Book
 
 	for res.Next() {
-		log.Println("obteniendo registro...")
-		var br Book // br: books retrieved
-		err := res.Scan(&br.Id, &br.Name, &br.Author, &br.CoverPage, &br.Synopsis, &br.Price, &br.CreatedAt, &br.UpdatedAt)
-		if err != nil {
-			log.Println("ha ocurrido un error al mapear el resultado a la entidad: ", err)
-			return nil, err
-			// TODO: Implementar errores personalizados
-		}
-		booksRes = append(booksRes, *toDomainModel(&br))
-	}
-	log.Println("cantidad de libros recuperados: " + strconv.Itoa(len(booksRes)))
+		var bookRetrieved Book
 
-	return booksRes, nil
+		err := res.Scan(&bookRetrieved.Id, &bookRetrieved.Name, &bookRetrieved.Author, &bookRetrieved.CoverPage, &bookRetrieved.Synopsis, &bookRetrieved.Price, &bookRetrieved.CreatedAt, &bookRetrieved.UpdatedAt)
+		if err != nil {
+			appErr := domainErrors.NewAppErrorWithType(domainErrors.MapError)
+			return nil, appErr
+		}
+
+		booksDomain = append(booksDomain, *toDomainModel(&bookRetrieved))
+	}
+
+	return booksDomain, nil
 }
 
 func (s *Store) GetBookByID(id int) (*books.Book, error) {
 	sqlSelect := "SELECT Id, Name, Author, CoverPage, Synopsis, Price, CreatedAt, UpdatedAt FROM Book WHERE Id = ?"
 
-	var br Book // br: books retrieved
-	err := s.db.QueryRow(sqlSelect, id).Scan(&br.Id, &br.Name, &br.Author, &br.CoverPage, &br.Synopsis, &br.Price, &br.CreatedAt, &br.UpdatedAt)
+	var bookRetrieved Book
+
+	err := s.db.QueryRow(sqlSelect, id).Scan(&bookRetrieved.Id, &bookRetrieved.Name, &bookRetrieved.Author, &bookRetrieved.CoverPage, &bookRetrieved.Synopsis, &bookRetrieved.Price, &bookRetrieved.CreatedAt, &bookRetrieved.UpdatedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			log.Println("no se ha encontrado un registro en la base de datos", err)
-			return nil, err
-			// TODO: Implementar errores personalizados
+			appErr := domainErrors.NewAppErrorWithType(domainErrors.NotFound)
+			return nil, appErr
 		}
-		log.Fatalln("ha ocurrido un error al obtener un libro por id: ", err)
-		return nil, err
-		// TODO: Implementar errores personalizados
+		appErr := domainErrors.NewAppError(errors.Wrap(err, readError), domainErrors.RepositoryError)
+		return nil, appErr
 	}
-	log.Println("libro recuperado: " + br.Name)
 
-	return toDomainModel(&br), nil
+	return toDomainModel(&bookRetrieved), nil
 }
 
 func (s *Store) CreateBook(book *books.Book) (*books.Book, error) {
@@ -77,13 +81,14 @@ func (s *Store) CreateBook(book *books.Book) (*books.Book, error) {
 
 	res, err := s.db.Exec(sqlInsert, bookEntity.Name, bookEntity.Author, bookEntity.CoverPage, bookEntity.Price)
 	if err != nil {
-		log.Println("ha ocurrido un error al insertar un nuevo libro: ", err)
-		return nil, err
+		appErr := domainErrors.NewAppError(errors.Wrap(err, createError), domainErrors.RepositoryError)
+		return nil, appErr
 	}
 
 	lastId, err := res.LastInsertId()
 	if err != nil {
-		log.Println("ha ocurrido un error al obtener el ultimo id insertado: ", err)
+		appErr := domainErrors.NewAppError(errors.Wrap(err, lastInsertIDError), domainErrors.RepositoryError)
+		return nil, appErr
 	}
 
 	book.Id = int(lastId)
