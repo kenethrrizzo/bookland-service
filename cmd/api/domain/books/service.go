@@ -1,5 +1,7 @@
 package books
 
+import "github.com/kenethrrizzo/bookland-service/cmd/api/domain/files"
+
 type BookService interface {
 	GetBookByID(int) (*Book, error)
 	GetAllBooks() ([]Book, error)
@@ -9,30 +11,30 @@ type BookService interface {
 }
 
 type Service struct {
-	repo BookRepository
+	bookRepo BookRepository
+	fileRepo files.FileRepository
 }
 
-func NewService(repo BookRepository) *Service {
-	return &Service{repo}
+func NewService(bookRepo BookRepository, fileRepo files.FileRepository) *Service {
+	return &Service{bookRepo, fileRepo}
 }
 
 func (svc *Service) GetBookByID(id int) (*Book, error) {
-	return svc.repo.GetBookByID(id)
+	return svc.bookRepo.GetBookByID(id)
 }
 
 func (svc *Service) GetAllBooks() ([]Book, error) {
-	return svc.repo.GetAllBooks()
+	return svc.bookRepo.GetAllBooks()
 }
 
 func (svc *Service) RegisterNewBook(book *Book) (*Book, error) {
-	return svc.repo.CreateBook(book)
+	return svc.bookRepo.CreateBook(book)
 }
 
 func (svc *Service) UpdateBookCoverImage(id int, newCoverPageURI string) (*Book, error) {
-	return svc.repo.UpdateBookCoverImage(id, newCoverPageURI)
+	return svc.bookRepo.UpdateBookCoverImage(id, newCoverPageURI)
 }
 
-
 func (svc *Service) DeleteBook(id int) error {
-	return svc.repo.DeleteBook(id)
+	return svc.bookRepo.DeleteBook(id)
 }

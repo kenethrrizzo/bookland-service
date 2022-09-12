@@ -1,13 +1,11 @@
 package http
 
 import (
-	"database/sql"
 	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	bookRepository "github.com/kenethrrizzo/bookland-service/cmd/api/data/books"
-	bookDomain "github.com/kenethrrizzo/bookland-service/cmd/api/domain/books"
+
 	bookHandler "github.com/kenethrrizzo/bookland-service/cmd/api/router/http/books"
 )
 
@@ -15,13 +13,8 @@ const (
 	BOOK_BASE_URL = "/books"
 )
 
-func NewHTTPHandler(db *sql.DB) http.Handler {
+func NewHTTPHandler(bookHandler *bookHandler.BookHandler) http.Handler {
 	router := chi.NewRouter()
-
-	/* Book handlers */
-	bookRepo := bookRepository.NewStore(db)
-	bookService := bookDomain.NewService(bookRepo)
-	bookHandler := bookHandler.NewHandler(bookService)
 
 	/* Book routes */
 	router.Get(fmt.Sprintf("%s/get-all", BOOK_BASE_URL), bookHandler.GetAllBooks)

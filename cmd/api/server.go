@@ -5,8 +5,13 @@ import (
 	"net/http"
 
 	"github.com/kenethrrizzo/bookland-service/cmd/api/config"
+	bookRepository "github.com/kenethrrizzo/bookland-service/cmd/api/data/books"
 	"github.com/kenethrrizzo/bookland-service/cmd/api/data/database"
+	filebookRepository "github.com/kenethrrizzo/bookland-service/cmd/api/data/files"
+	"github.com/kenethrrizzo/bookland-service/cmd/api/data/storage"
+	bookDomain "github.com/kenethrrizzo/bookland-service/cmd/api/domain/books"
 	router "github.com/kenethrrizzo/bookland-service/cmd/api/router/http"
+	bookHandler "github.com/kenethrrizzo/bookland-service/cmd/api/router/http/books"
 )
 
 func main() {
@@ -17,7 +22,21 @@ func main() {
 		panic(err)
 	}
 
-	httpRouter := router.NewHTTPHandler(db)
+	s3client, err := storage.Connect()
+	if err != nil {
+		panic(err)
+	}
+
+	/* files management */
+	fileRepo := filebookRepository.NewStore(s3client)
+
+	/* books */
+	bookRepo := bookRepository.NewStore(db)
+	bookService := bookDomain.NewService(bookRepo, fileRepo)
+	bookHandler := bookHandler.NewHandler(bookService)
+
+	httpRouter := router.NewHTTPHandler(bookHandler)
+
 	err = http.ListenAndServe(fmt.Sprintf(":%s", config.Server.Port), httpRouter)
 	if err != nil {
 		panic(err)
