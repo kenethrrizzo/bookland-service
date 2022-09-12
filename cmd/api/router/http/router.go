@@ -23,6 +23,7 @@ func NewHTTPHandler(db *sql.DB) http.Handler {
 	bookService := bookDomain.NewService(bookRepo)
 	bookHandler := bookHandler.NewHandler(bookService)
 
+	/* Book routes */
 	router.Get(fmt.Sprintf("%s/get-all", BOOK_BASE_URL), bookHandler.GetAllBooks)
 	router.Get(fmt.Sprintf("%s/get-by-id/{bookID}", BOOK_BASE_URL), bookHandler.GetBookByID)
 	router.Post(fmt.Sprintf("%s/register", BOOK_BASE_URL), bookHandler.RegisterNewBook)
