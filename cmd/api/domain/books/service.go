@@ -1,6 +1,10 @@
 package books
 
-import "github.com/kenethrrizzo/bookland-service/cmd/api/domain/files"
+import (
+	"log"
+
+	"github.com/kenethrrizzo/bookland-service/cmd/api/domain/files"
+)
 
 type BookService interface {
 	GetBookByID(int) (*Book, error)
@@ -32,6 +36,12 @@ func (svc *Service) RegisterNewBook(book *Book) (*Book, error) {
 }
 
 func (svc *Service) UpdateBookCoverImage(id int, newCoverPageURI string) (*Book, error) {
+	// TODO: implementar uso correcto
+	_, err := svc.fileRepo.UploadFile("bookland-bucket", "./images/test-3651077849.png")
+	if err != nil {
+		log.Fatalln(err)
+	}
+
 	return svc.bookRepo.UpdateBookCoverImage(id, newCoverPageURI)
 }
 

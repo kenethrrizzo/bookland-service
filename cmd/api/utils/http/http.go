@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"time"
 
 	domainErrors "github.com/kenethrrizzo/bookland-service/cmd/api/domain/errors"
 )
@@ -47,8 +46,10 @@ func Error(w http.ResponseWriter, err error) {
 	}
 }
 
-// TODO: Implementar uso de s3 para carga de imagenes
-func SaveFile(w http.ResponseWriter, r *http.Request, formFile string, pathToSave string) (*string, error) {
+// TODO: Arreglar metodo para manejo de formularios
+func SaveTempFile(w http.ResponseWriter, r *http.Request, formFile string) (*string, error) {
+	pathToSave := "./tmp"
+
 	r.ParseMultipartForm(10 << 20)
 
 	file, header, err := r.FormFile(formFile)
@@ -61,7 +62,7 @@ func SaveFile(w http.ResponseWriter, r *http.Request, formFile string, pathToSav
 	fileNameSplited := strings.Split(header.Filename, ".")
 	fileExtension := fileNameSplited[len(fileNameSplited)-1]
 
-	tempFile, err := os.CreateTemp(pathToSave, fmt.Sprintf("%s-*.%s", time.Now(), fileExtension))
+	tempFile, err := os.CreateTemp(pathToSave, fmt.Sprintf("%s-*.%s", "tmp", fileExtension))
 	if err != nil {
 		Error(w, err)
 		return nil, err
@@ -77,5 +78,7 @@ func SaveFile(w http.ResponseWriter, r *http.Request, formFile string, pathToSav
 
 	fileName := tempFile.Name()
 
-	return &fileName, nil
+	filePath := fmt.Sprintf("./%s/%s", pathToSave, fileName)
+
+	return &filePath, nil
 }

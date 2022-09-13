@@ -6,9 +6,9 @@ import (
 
 	"github.com/kenethrrizzo/bookland-service/cmd/api/config"
 	bookRepository "github.com/kenethrrizzo/bookland-service/cmd/api/data/books"
-	"github.com/kenethrrizzo/bookland-service/cmd/api/data/database"
+	"github.com/kenethrrizzo/bookland-service/cmd/api/data/connections/database"
 	filebookRepository "github.com/kenethrrizzo/bookland-service/cmd/api/data/files"
-	"github.com/kenethrrizzo/bookland-service/cmd/api/data/storage"
+	"github.com/kenethrrizzo/bookland-service/cmd/api/data/connections/storage"
 	bookDomain "github.com/kenethrrizzo/bookland-service/cmd/api/domain/books"
 	router "github.com/kenethrrizzo/bookland-service/cmd/api/router/http"
 	bookHandler "github.com/kenethrrizzo/bookland-service/cmd/api/router/http/books"

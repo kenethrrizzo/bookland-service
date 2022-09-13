@@ -76,6 +76,7 @@ func (handl *BookHandler) RegisterNewBook(w http.ResponseWriter, r *http.Request
 	httpUtil.JSON(w, http.StatusCreated, response)
 }
 
+// TODO: Aplicar manejo de formularios
 func (handl *BookHandler) UpdateBookCoverImage(w http.ResponseWriter, r *http.Request) {
 	var request BookRequest
 
