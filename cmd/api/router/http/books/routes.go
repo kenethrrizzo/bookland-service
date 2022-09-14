@@ -1,13 +1,13 @@
 package books
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/kenethrrizzo/bookland-service/cmd/api/domain/books"
 	httpUtil "github.com/kenethrrizzo/bookland-service/cmd/api/utils/http"
+	"github.com/sirupsen/logrus"
 )
 
 type BookHandler struct {
@@ -21,7 +21,7 @@ func NewHandler(svc books.BookService) *BookHandler {
 func (handl *BookHandler) GetAllBooks(w http.ResponseWriter, r *http.Request) {
 	results, err := handl.service.GetAllBooks()
 	if err != nil {
-		httpUtil.Error(w, err)
+		httpUtil.ERROR(w, err)
 		return
 	}
 
@@ -39,13 +39,13 @@ func (handl *BookHandler) GetBookByID(w http.ResponseWriter, r *http.Request) {
 
 	bookID, err := strconv.Atoi(bookIDstr)
 	if err != nil {
-		httpUtil.Error(w, err)
+		httpUtil.ERROR(w, err)
 		return
 	}
 
 	result, err := handl.service.GetBookByID(bookID)
 	if err != nil {
-		httpUtil.Error(w, err)
+		httpUtil.ERROR(w, err)
 		return
 	}
 
@@ -55,19 +55,34 @@ func (handl *BookHandler) GetBookByID(w http.ResponseWriter, r *http.Request) {
 }
 
 func (handl *BookHandler) RegisterNewBook(w http.ResponseWriter, r *http.Request) {
-	var request BookRequest
+	r.ParseMultipartForm(10 << 20)
 
-	err := json.NewDecoder(r.Body).Decode(&request)
+	file, fHeader, err := r.FormFile("coverpage")
 	if err != nil {
-		httpUtil.Error(w, err)
+		logrus.Error(err)
+		httpUtil.ERROR(w, err)
+		return
+	}
+	file.Close()
+
+	coverImgRoute, err := httpUtil.SaveFormFileToTempFolder(w, file, fHeader)
+	if err != nil {
+		logrus.Error(err)
+		httpUtil.ERROR(w, err)
 		return
 	}
 
-	book := bookRequestToBookDomain(&request)
-
-	bookDomain, err := handl.service.RegisterNewBook(book)
+	book, err := bookFormToBookDomain(w, r)
 	if err != nil {
-		httpUtil.Error(w, err)
+		logrus.Error(err)
+		httpUtil.ERROR(w, err)
+		return
+	}
+
+	bookDomain, err := handl.service.RegisterNewBook(book, *coverImgRoute)
+	if err != nil {
+		logrus.Error(err)
+		httpUtil.ERROR(w, err)
 		return
 	}
 
@@ -76,19 +91,34 @@ func (handl *BookHandler) RegisterNewBook(w http.ResponseWriter, r *http.Request
 	httpUtil.JSON(w, http.StatusCreated, response)
 }
 
-// TODO: Aplicar manejo de formularios
 func (handl *BookHandler) UpdateBookCoverImage(w http.ResponseWriter, r *http.Request) {
-	var request BookRequest
+	r.ParseMultipartForm(10 << 20)
 
-	err := json.NewDecoder(r.Body).Decode(&request)
+	file, fHeader, err := r.FormFile("coverpage")
 	if err != nil {
-		httpUtil.Error(w, err)
+		logrus.Error(err)
+		httpUtil.ERROR(w, err)
+		return
+	}
+	file.Close()
+
+	coverImgRoute, err := httpUtil.SaveFormFileToTempFolder(w, file, fHeader)
+	if err != nil {
+		logrus.Error(err)
+		httpUtil.ERROR(w, err)
 		return
 	}
 
-	bookDomain, err := handl.service.UpdateBookCoverImage(request.Id, request.Coverpage)
+	id, err := strconv.Atoi(r.FormValue("id"))
 	if err != nil {
-		httpUtil.Error(w, err)
+		logrus.Error(err)
+		httpUtil.ERROR(w, err)
+		return
+	}
+
+	bookDomain, err := handl.service.UpdateBookCoverImage(id, *coverImgRoute)
+	if err != nil {
+		httpUtil.ERROR(w, err)
 		return
 	}
 
@@ -102,13 +132,13 @@ func (handl *BookHandler) DeleteBook(w http.ResponseWriter, r *http.Request) {
 
 	bookID, err := strconv.Atoi(bookIDstr)
 	if err != nil {
-		httpUtil.Error(w, err)
+		httpUtil.ERROR(w, err)
 		return
 	}
 
 	err = handl.service.DeleteBook(bookID)
 	if err != nil {
-		httpUtil.Error(w, err)
+		httpUtil.ERROR(w, err)
 		return
 	}
 

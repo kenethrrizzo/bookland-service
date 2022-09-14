@@ -2,8 +2,6 @@ package files
 
 import (
 	"context"
-	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -11,6 +9,10 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	domainErrors "github.com/kenethrrizzo/bookland-service/cmd/api/domain/errors"
+)
+
+const (
+	BUCKETNAME = "bookland-bucket"
 )
 
 type Store struct {
@@ -21,7 +23,7 @@ func NewStore(s3client *s3.Client) *Store {
 	return &Store{s3client}
 }
 
-func (s *Store) UploadFile(bucketName string, filePath string) (*string, error) {
+func (s *Store) UploadFile(filePath string) (*string, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
 		appErr := domainErrors.NewAppError(err, domainErrors.UnknownError)
@@ -33,7 +35,7 @@ func (s *Store) UploadFile(bucketName string, filePath string) (*string, error) 
 
 	_, err = s.s3client.PutObject(context.TODO(), &s3.PutObjectInput{
 		Body:   file,
-		Bucket: aws.String(bucketName),
+		Bucket: aws.String(BUCKETNAME),
 		Key:    aws.String(fileName),
 		ACL:    types.ObjectCannedACLPublicRead,
 	})
@@ -42,15 +44,6 @@ func (s *Store) UploadFile(bucketName string, filePath string) (*string, error) 
 		return nil, appErr
 	}
 
-	fileURL := s.GetFileURL(bucketName, fileName)
-
-	log.Println(fileURL)
-
-	return &fileURL, nil
+	return &fileName, nil
 }
 
-func (s *Store) GetFileURL(bucketName string, filePath string) string {
-	url := fmt.Sprintf("https://%s.s3.amazonaws.com/%s", bucketName, filePath)
-
-	return url
-}

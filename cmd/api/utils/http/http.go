@@ -2,13 +2,17 @@ package http
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	domainErrors "github.com/kenethrrizzo/bookland-service/cmd/api/domain/errors"
+	"github.com/sirupsen/logrus"
 )
 
 type MessageResponse struct {
@@ -20,11 +24,11 @@ func JSON(w http.ResponseWriter, code int, data interface{}) {
 	w.WriteHeader(code)
 	err := json.NewEncoder(w).Encode(data)
 	if err != nil {
-		Error(w, err)
+		ERROR(w, err)
 	}
 }
 
-func Error(w http.ResponseWriter, err error) {
+func ERROR(w http.ResponseWriter, err error) {
 	appErr, ok := err.(*domainErrors.AppError)
 
 	if ok {
@@ -46,39 +50,41 @@ func Error(w http.ResponseWriter, err error) {
 	}
 }
 
-// TODO: Arreglar metodo para manejo de formularios
-func SaveTempFile(w http.ResponseWriter, r *http.Request, formFile string) (*string, error) {
-	pathToSave := "./tmp"
+func SaveFormFileToTempFolder(w http.ResponseWriter, file multipart.File, fHeader *multipart.FileHeader) (*string, error) {
+	tmpFolder := "./tmp/"
 
-	r.ParseMultipartForm(10 << 20)
+	if _, err := os.Stat(tmpFolder); errors.Is(err, os.ErrNotExist) {
+		if err := os.Mkdir(tmpFolder, os.ModePerm); err != nil {
+			logrus.Error(err)
+			return nil, err
+		}
+	}
 
-	file, header, err := r.FormFile(formFile)
+	fileName := strings.TrimSpace(fHeader.Filename)
+	fileType := strings.ToLower(fileName[len(fileName)-3:])
+
+	// TODO: Guardar nombre de archivo como un hash generado
+	fileName = fmt.Sprintf("%d%d%d%d%d%d%d%d%d.%s",
+		time.Now().Year(), time.Now().Month(), time.Now().Day(), time.Now().Hour(),
+		time.Now().Minute(), time.Now().Second(), time.Now().UnixMilli(),
+		time.Now().UnixMicro(), time.Now().Nanosecond(), fileType)
+
+	if fileType != "png" && fileType != "jpg" {
+		return nil, domainErrors.NewAppError(errors.New("invalid file type"), domainErrors.UnknownError)
+	}
+
+	fileRoute := tmpFolder + fileName
+
+	newFile, err := os.Create(fileRoute)
 	if err != nil {
-		Error(w, err)
 		return nil, err
 	}
-	defer file.Close()
+	defer newFile.Close()
 
-	fileNameSplited := strings.Split(header.Filename, ".")
-	fileExtension := fileNameSplited[len(fileNameSplited)-1]
-
-	tempFile, err := os.CreateTemp(pathToSave, fmt.Sprintf("%s-*.%s", "tmp", fileExtension))
+	_, err = io.Copy(newFile, file)
 	if err != nil {
-		Error(w, err)
 		return nil, err
 	}
-	defer tempFile.Close()
 
-	fileBytes, err := io.ReadAll(file)
-	if err != nil {
-		Error(w, err)
-		return nil, err
-	}
-	tempFile.Write(fileBytes)
-
-	fileName := tempFile.Name()
-
-	filePath := fmt.Sprintf("./%s/%s", pathToSave, fileName)
-
-	return &filePath, nil
+	return &fileRoute, nil
 }

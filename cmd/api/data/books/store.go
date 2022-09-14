@@ -77,11 +77,11 @@ func (s *Store) GetBookByID(id int) (*books.Book, error) {
 }
 
 func (s *Store) CreateBook(book *books.Book) (*books.Book, error) {
-	sqlInsert := "INSERT INTO Book (Name, Author, CoverPage, Price) values (?, ?, ?, ?)"
+	sqlInsert := "INSERT INTO Book (Name, Author, CoverPage, Synopsis, Price) values (?, ?, ?, ?, ?)"
 
 	bookEntity := toDBModel(book)
 
-	res, err := s.db.Exec(sqlInsert, bookEntity.Name, bookEntity.Author, bookEntity.CoverPage, bookEntity.Price)
+	res, err := s.db.Exec(sqlInsert, bookEntity.Name, bookEntity.Author, bookEntity.CoverPage, bookEntity.Synopsis, bookEntity.Price)
 	if err != nil {
 		appErr := domainErrors.NewAppError(errors.Wrap(err, createError), domainErrors.RepositoryError)
 		return nil, appErr
