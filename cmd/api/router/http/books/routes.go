@@ -1,13 +1,13 @@
 package books
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
-	"github.com/go-chi/chi/v5"
+	"github.com/gin-gonic/gin"
 	"github.com/kenethrrizzo/bookland-service/cmd/api/domain/books"
 	httpUtil "github.com/kenethrrizzo/bookland-service/cmd/api/utils/http"
-	"github.com/sirupsen/logrus"
 )
 
 type BookHandler struct {
@@ -18,133 +18,129 @@ func NewHandler(svc books.BookService) *BookHandler {
 	return &BookHandler{svc}
 }
 
-func (handl *BookHandler) GetAllBooks(w http.ResponseWriter, r *http.Request) {
-	results, err := handl.service.GetAllBooks()
+func (h *BookHandler) GetAllBooks(c *gin.Context) {
+	books, err := h.service.GetAllBooks()
 	if err != nil {
-		httpUtil.ERROR(w, err)
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+			"message": err.Error(),
+		})
 		return
 	}
 
-	var response []BookResponse
+	var booksResponse []BookResponse
 
-	for _, result := range results {
-		response = append(response, *bookDomaintoBookResponse(&result))
+	for _, r := range books {
+		booksResponse = append(booksResponse, *bookDomaintoBookResponse(&r))
 	}
 
-	httpUtil.JSON(w, http.StatusOK, response)
+	c.JSON(http.StatusOK, booksResponse)
 }
 
-func (handl *BookHandler) GetBookByID(w http.ResponseWriter, r *http.Request) {
-	bookIDstr := chi.URLParam(r, "bookID")
-
-	bookID, err := strconv.Atoi(bookIDstr)
+func (h *BookHandler) GetBookByID(c *gin.Context) {
+	bookID, err := strconv.Atoi(c.Param("bookID"))
 	if err != nil {
-		httpUtil.ERROR(w, err)
+		c.AbortWithStatusJSON(http.StatusBadRequest, err)
 		return
 	}
 
-	result, err := handl.service.GetBookByID(bookID)
+	book, err := h.service.GetBookByID(bookID)
 	if err != nil {
-		httpUtil.ERROR(w, err)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"message": err.Error(),
+		})
 		return
 	}
 
-	response := bookDomaintoBookResponse(result)
-
-	httpUtil.JSON(w, http.StatusOK, response)
+	c.JSON(http.StatusOK, bookDomaintoBookResponse(book))
 }
 
-func (handl *BookHandler) RegisterNewBook(w http.ResponseWriter, r *http.Request) {
-	r.ParseMultipartForm(10 << 20)
+func (h *BookHandler) RegisterNewBook(c *gin.Context) {
+	var bookRequest BookRequest
 
-	file, fHeader, err := r.FormFile("coverpage")
-	if err != nil {
-		logrus.Error(err)
-		httpUtil.ERROR(w, err)
-		return
-	}
-	file.Close()
-
-	coverImgRoute, err := httpUtil.SaveFormFileToTempFolder(w, file, fHeader)
-	if err != nil {
-		logrus.Error(err)
-		httpUtil.ERROR(w, err)
+	if err := c.Bind(&bookRequest); err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 
-	book, err := bookFormToBookDomain(w, r)
+	book := bookRequestToBookDomain(&bookRequest)
+
+	if bookRequest.Coverpage != nil {
+		coverImgTmpRoute := fmt.Sprintf("./tmp/%s",
+			httpUtil.GenerateUniqueFileName(bookRequest.Coverpage))
+
+		err := c.SaveUploadedFile(bookRequest.Coverpage, coverImgTmpRoute)
+		if err != nil {
+			c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+
+		book.CoverPage = coverImgTmpRoute
+	} else {
+		book.CoverPage = ""
+	}
+
+	book, err := h.service.RegisterNewBook(book)
 	if err != nil {
-		logrus.Error(err)
-		httpUtil.ERROR(w, err)
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	bookDomain, err := handl.service.RegisterNewBook(book, *coverImgRoute)
-	if err != nil {
-		logrus.Error(err)
-		httpUtil.ERROR(w, err)
-		return
-	}
-
-	response := bookDomaintoBookResponse(bookDomain)
-
-	httpUtil.JSON(w, http.StatusCreated, response)
+	c.JSON(http.StatusCreated, book)
 }
 
-func (handl *BookHandler) UpdateBookCoverImage(w http.ResponseWriter, r *http.Request) {
-	r.ParseMultipartForm(10 << 20)
-
-	file, fHeader, err := r.FormFile("coverpage")
+func (h *BookHandler) UpdateBook(c *gin.Context) {
+	bookID, err := strconv.Atoi(c.Param("bookID"))
 	if err != nil {
-		logrus.Error(err)
-		httpUtil.ERROR(w, err)
-		return
-	}
-	file.Close()
-
-	coverImgRoute, err := httpUtil.SaveFormFileToTempFolder(w, file, fHeader)
-	if err != nil {
-		logrus.Error(err)
-		httpUtil.ERROR(w, err)
+		c.AbortWithStatusJSON(http.StatusBadRequest, err)
 		return
 	}
 
-	id, err := strconv.Atoi(r.FormValue("id"))
-	if err != nil {
-		logrus.Error(err)
-		httpUtil.ERROR(w, err)
+	var bookRequest BookRequest
+
+	if err := c.Bind(&bookRequest); err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 
-	bookDomain, err := handl.service.UpdateBookCoverImage(id, *coverImgRoute)
+	book := bookRequestToBookDomain(&bookRequest)
+	if bookRequest.Coverpage != nil {
+		coverImgTmpRoute := fmt.Sprintf("./tmp/%s",
+			httpUtil.GenerateUniqueFileName(bookRequest.Coverpage))
+
+		err := c.SaveUploadedFile(bookRequest.Coverpage, coverImgTmpRoute)
+		if err != nil {
+			c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+
+		book.CoverPage = coverImgTmpRoute
+	} else {
+		book.CoverPage = ""
+	}
+
+	book, err = h.service.UpdateBook(book, bookID)
 	if err != nil {
-		httpUtil.ERROR(w, err)
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	response := bookDomaintoBookResponse(bookDomain)
-
-	httpUtil.JSON(w, http.StatusOK, response)
+	c.JSON(http.StatusCreated, book)
 }
 
-func (handl *BookHandler) DeleteBook(w http.ResponseWriter, r *http.Request) {
-	bookIDstr := chi.URLParam(r, "bookID")
-
-	bookID, err := strconv.Atoi(bookIDstr)
+func (h *BookHandler) DeleteBook(c *gin.Context) {
+	bookID, err := strconv.Atoi(c.Param("bookID"))
 	if err != nil {
-		httpUtil.ERROR(w, err)
+		c.AbortWithStatusJSON(http.StatusBadRequest, err)
 		return
 	}
 
-	err = handl.service.DeleteBook(bookID)
+	err = h.service.DeleteBook(bookID)
 	if err != nil {
-		httpUtil.ERROR(w, err)
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	response := httpUtil.MessageResponse{
-		Message: "deleted!",
-	}
-
-	httpUtil.JSON(w, http.StatusOK, response)
+	c.JSON(http.StatusOK, &gin.H{
+		"message": "deleted",
+	})
 }

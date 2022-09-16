@@ -2,6 +2,7 @@ package books
 
 import (
 	"database/sql"
+	"time"
 
 	"github.com/pkg/errors"
 
@@ -98,18 +99,15 @@ func (s *Store) CreateBook(book *books.Book) (*books.Book, error) {
 	return book, nil
 }
 
-func (s *Store) UpdateBookCoverImage(id int, newCoverPageURI string) (*books.Book, error) {
-	sqlUpdate := "UPDATE Book SET CoverPage = ? WHERE Id = ?"
+func (s *Store) UpdateBook(book *books.Book) (*books.Book, error) {
+	sqlUpdate := "UPDATE Book SET Name = ?, Author = ?, CoverPage = ?, Synopsis = ?, Price = ?, UpdatedAt = ? WHERE Id = ?"
 
-	_, err := s.db.Exec(sqlUpdate, newCoverPageURI, id)
+	bookEntity := toDBModel(book)
+
+	_, err := s.db.Exec(sqlUpdate, bookEntity.Name, bookEntity.Author, bookEntity.CoverPage, bookEntity.Synopsis, bookEntity.Price, time.Now(), bookEntity.Id)
 	if err != nil {
 		appErr := domainErrors.NewAppError(errors.Wrap(err, updateError), domainErrors.RepositoryError)
 		return nil, appErr
-	}
-
-	book, err := s.GetBookByID(id)
-	if err != nil {
-		return nil, err
 	}
 
 	return book, nil

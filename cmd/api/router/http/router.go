@@ -1,10 +1,9 @@
 package http
 
 import (
-	"fmt"
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
+	"github.com/gin-gonic/gin"
 
 	bookHandler "github.com/kenethrrizzo/bookland-service/cmd/api/router/http/books"
 )
@@ -14,14 +13,16 @@ const (
 )
 
 func NewHTTPHandler(bookHandler *bookHandler.BookHandler) http.Handler {
-	router := chi.NewRouter()
+	router := gin.Default()
 
-	/* Book routes */
-	router.Get(fmt.Sprintf("%s/get-all", BOOK_BASE_URL), bookHandler.GetAllBooks)
-	router.Get(fmt.Sprintf("%s/get-by-id/{bookID}", BOOK_BASE_URL), bookHandler.GetBookByID)
-	router.Post(fmt.Sprintf("%s/register", BOOK_BASE_URL), bookHandler.RegisterNewBook)
-	router.Put(fmt.Sprintf("%s/update-cover-page", BOOK_BASE_URL), bookHandler.UpdateBookCoverImage)
-	router.Delete(fmt.Sprintf("%s/delete/{bookID}", BOOK_BASE_URL), bookHandler.DeleteBook)
+	booksGroup := router.Group("/books")
+	{
+		booksGroup.GET("/get", bookHandler.GetAllBooks)
+		booksGroup.GET("/get/:bookID", bookHandler.GetBookByID)
+		booksGroup.POST("/register", bookHandler.RegisterNewBook)
+		booksGroup.PUT("/update/:bookID", bookHandler.UpdateBook)
+		booksGroup.DELETE("/delete/:bookID", bookHandler.DeleteBook)
+	}
 
 	return router
 }

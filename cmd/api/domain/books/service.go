@@ -1,17 +1,14 @@
 package books
 
 import (
-	"log"
-
 	"github.com/kenethrrizzo/bookland-service/cmd/api/domain/files"
-	"github.com/sirupsen/logrus"
 )
 
 type BookService interface {
 	GetBookByID(int) (*Book, error)
 	GetAllBooks() ([]Book, error)
-	RegisterNewBook(*Book, string) (*Book, error)
-	UpdateBookCoverImage(int, string) (*Book, error)
+	RegisterNewBook(*Book) (*Book, error)
+	UpdateBook(*Book, int) (*Book, error)
 	DeleteBook(int) error
 }
 
@@ -32,25 +29,32 @@ func (svc *Service) GetAllBooks() ([]Book, error) {
 	return svc.bookRepo.GetAllBooks()
 }
 
-func (svc *Service) RegisterNewBook(book *Book, coverImg string) (*Book, error) {
-	coverPageName, err := svc.fileRepo.UploadFile(coverImg)
-	if err != nil {
-		logrus.Error(err)
-		return nil, err
-	}
+func (svc *Service) RegisterNewBook(book *Book) (*Book, error) {
+	if book.CoverPage != "" {
+		coverPageURL, err := svc.fileRepo.UploadFile(book.CoverPage)
+		if err != nil {
+			return nil, err
+		}
 
-	book.CoverPage = *coverPageName
+		book.CoverPage = *coverPageURL
+	}
 
 	return svc.bookRepo.CreateBook(book)
 }
 
-func (svc *Service) UpdateBookCoverImage(id int, coverImg string) (*Book, error) {
-	coverPageName, err := svc.fileRepo.UploadFile(coverImg)
-	if err != nil {
-		log.Fatalln(err)
+func (svc *Service) UpdateBook(book *Book, bookID int) (*Book, error) {
+	book.Id = bookID
+
+	if book.CoverPage != "" {
+		coverPageURL, err := svc.fileRepo.UploadFile(book.CoverPage)
+		if err != nil {
+			return nil, err
+		}
+
+		book.CoverPage = *coverPageURL
 	}
 
-	return svc.bookRepo.UpdateBookCoverImage(id, *coverPageName)
+	return svc.bookRepo.UpdateBook(book)
 }
 
 func (svc *Service) DeleteBook(id int) error {

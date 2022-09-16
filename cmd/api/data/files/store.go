@@ -2,6 +2,7 @@ package files
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -44,6 +45,7 @@ func (s *Store) UploadFile(filePath string) (*string, error) {
 		return nil, appErr
 	}
 
-	return &fileName, nil
-}
+	fileLocation := fmt.Sprintf("https://%s.s3.amazonaws.com/%s", BUCKETNAME, fileName)
 
+	return &fileLocation, nil
+}
