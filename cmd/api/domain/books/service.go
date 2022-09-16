@@ -6,6 +6,7 @@ import (
 
 type BookService interface {
 	GetBookByID(int) (*Book, error)
+	GetBooksByGenre(string) ([]Book, error)
 	GetAllBooks() ([]Book, error)
 	RegisterNewBook(*Book) (*Book, error)
 	UpdateBook(*Book, int) (*Book, error)
@@ -21,17 +22,21 @@ func NewService(bookRepo BookRepository, fileRepo files.FileRepository) *Service
 	return &Service{bookRepo, fileRepo}
 }
 
-func (svc *Service) GetBookByID(id int) (*Book, error) {
-	return svc.bookRepo.GetBookByID(id)
+func (s *Service) GetAllBooks() ([]Book, error) {
+	return s.bookRepo.GetAllBooks()
 }
 
-func (svc *Service) GetAllBooks() ([]Book, error) {
-	return svc.bookRepo.GetAllBooks()
+func (s *Service) GetBooksByGenre(genre string) ([]Book, error) {
+	return s.bookRepo.GetBooksByGenre(genre)
 }
 
-func (svc *Service) RegisterNewBook(book *Book) (*Book, error) {
+func (s *Service) GetBookByID(id int) (*Book, error) {
+	return s.bookRepo.GetBookByID(id)
+}
+
+func (s *Service) RegisterNewBook(book *Book) (*Book, error) {
 	if book.CoverPage != "" {
-		coverPageURL, err := svc.fileRepo.UploadFile(book.CoverPage)
+		coverPageURL, err := s.fileRepo.UploadFile(book.CoverPage)
 		if err != nil {
 			return nil, err
 		}
@@ -39,14 +44,14 @@ func (svc *Service) RegisterNewBook(book *Book) (*Book, error) {
 		book.CoverPage = *coverPageURL
 	}
 
-	return svc.bookRepo.CreateBook(book)
+	return s.bookRepo.CreateBook(book)
 }
 
-func (svc *Service) UpdateBook(book *Book, bookID int) (*Book, error) {
+func (s *Service) UpdateBook(book *Book, bookID int) (*Book, error) {
 	book.Id = bookID
 
 	if book.CoverPage != "" {
-		coverPageURL, err := svc.fileRepo.UploadFile(book.CoverPage)
+		coverPageURL, err := s.fileRepo.UploadFile(book.CoverPage)
 		if err != nil {
 			return nil, err
 		}
@@ -54,9 +59,9 @@ func (svc *Service) UpdateBook(book *Book, bookID int) (*Book, error) {
 		book.CoverPage = *coverPageURL
 	}
 
-	return svc.bookRepo.UpdateBook(book)
+	return s.bookRepo.UpdateBook(book)
 }
 
-func (svc *Service) DeleteBook(id int) error {
-	return svc.bookRepo.DeleteBook(id)
+func (s *Service) DeleteBook(id int) error {
+	return s.bookRepo.DeleteBook(id)
 }

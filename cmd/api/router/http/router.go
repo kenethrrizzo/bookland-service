@@ -18,6 +18,7 @@ func NewHTTPHandler(bookHandler *bookHandler.BookHandler) http.Handler {
 	booksGroup := router.Group("/books")
 	{
 		booksGroup.GET("/get", bookHandler.GetAllBooks)
+		booksGroup.GET("/get/genre/:genre", bookHandler.GetBooksByGenre)
 		booksGroup.GET("/get/:bookID", bookHandler.GetBookByID)
 		booksGroup.POST("/register", bookHandler.RegisterNewBook)
 		booksGroup.PUT("/update/:bookID", bookHandler.UpdateBook)

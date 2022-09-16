@@ -48,6 +48,8 @@ github.com/aws/aws-sdk-go-v2/credentials v1.12.19 h1:fYtSz4Fd0lUavtj4FAtvol9G2k0
 github.com/aws/aws-sdk-go-v2/credentials v1.12.19/go.mod h1:fRQMbLwSHPr0XRzuez6x7BX5+0nNQs5BzG+oR4bQKyY=
 github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.12.16 h1:LX38v4cqSqrBETHUBnc8B+N6p5YA41GaPQ3jwICjetI=
 github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.12.16/go.mod h1:lnJ8tKos2s7JeBdLVFknwVSlQZAKzkgrFNQmUaTWwRQ=
+github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.11.32 h1:7VX09WtXhjIcJ+CKwYgFsVjypiqg29awSaMH1RQ++Eg=
+github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.11.32/go.mod h1:zNsdxtYDwAWcxWMgH9+s1U0OOW+jrPLK6HHNw6r76l4=
 github.com/aws/aws-sdk-go-v2/internal/configsources v1.1.22 h1:pE27/u2A7JlwICjOvONQDob8PToShRTkuiUE74ymVWg=
 github.com/aws/aws-sdk-go-v2/internal/configsources v1.1.22/go.mod h1:/vNv5Al0bpiF8YdX2Ov6Xy05VTiXsql94yUqJMYaj0w=
 github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.4.16 h1:L5LKGHHXOl4t7+5QZMTl38GIzSAq07XUTRtEquiHGMA=
@@ -179,6 +181,7 @@ github.com/hashicorp/hcl v1.0.0 h1:0Anlzjpi4vEasTeNFn2mLJgTSwt0+6sfsiTG8qcWGx4=
 github.com/hashicorp/hcl v1.0.0/go.mod h1:E5yfLk+7swimpb2L/Alb/PJmXilQ/rhwaUYs4T20WEQ=
 github.com/ianlancetaylor/demangle v0.0.0-20181102032728-5e5cf60278f6/go.mod h1:aSSvb/t6k1mPoxDqO4vJh6VOCGPwU4O0C2/Eqndh1Sc=
 github.com/ianlancetaylor/demangle v0.0.0-20200824232613-28f6c0f3b639/go.mod h1:aSSvb/t6k1mPoxDqO4vJh6VOCGPwU4O0C2/Eqndh1Sc=
+github.com/jmespath/go-jmespath v0.4.0 h1:BEgLn5cpjn8UN1mAw4NjwDrS35OdebyEtFe+9YPoQUg=
 github.com/jmespath/go-jmespath v0.4.0/go.mod h1:T8mJZnbsbmF+m6zOOFylbeCJqk5+pHWvzYPziyZiYoo=
 github.com/jmespath/go-jmespath/internal/testify v1.5.1/go.mod h1:L3OGu8Wl2/fWfCI6z80xFu9LTZmf1ZRjMHUOPmWr69U=
 github.com/json-iterator/go v1.1.12 h1:PV8peI4a0ysnczrg+LtxykD8LfKY9ML6u2jnxaEnrnM=

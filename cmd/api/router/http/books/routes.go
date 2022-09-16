@@ -21,12 +21,26 @@ func NewHandler(svc books.BookService) *BookHandler {
 func (h *BookHandler) GetAllBooks(c *gin.Context) {
 	books, err := h.service.GetAllBooks()
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"message": err.Error(),
-		})
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
+	var booksResponse []BookResponse
 
+	for _, r := range books {
+		booksResponse = append(booksResponse, *bookDomaintoBookResponse(&r))
+	}
+
+	c.JSON(http.StatusOK, booksResponse)
+}
+
+func (h *BookHandler) GetBooksByGenre(c *gin.Context) {
+	genre := c.Param("genre")
+	
+	books, err := h.service.GetBooksByGenre(genre)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
 	var booksResponse []BookResponse
 
 	for _, r := range books {
@@ -39,15 +53,13 @@ func (h *BookHandler) GetAllBooks(c *gin.Context) {
 func (h *BookHandler) GetBookByID(c *gin.Context) {
 	bookID, err := strconv.Atoi(c.Param("bookID"))
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, err)
+		c.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 
 	book, err := h.service.GetBookByID(bookID)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-			"message": err.Error(),
-		})
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
@@ -85,7 +97,7 @@ func (h *BookHandler) RegisterNewBook(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, book)
+	c.JSON(http.StatusCreated, bookDomaintoBookResponse(book))
 }
 
 func (h *BookHandler) UpdateBook(c *gin.Context) {
@@ -124,7 +136,7 @@ func (h *BookHandler) UpdateBook(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, book)
+	c.JSON(http.StatusCreated, bookDomaintoBookResponse(book))
 }
 
 func (h *BookHandler) DeleteBook(c *gin.Context) {

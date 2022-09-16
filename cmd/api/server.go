@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/kenethrrizzo/bookland-service/cmd/api/config"
 	bookRepository "github.com/kenethrrizzo/bookland-service/cmd/api/data/books"
@@ -14,7 +15,18 @@ import (
 	bookHandler "github.com/kenethrrizzo/bookland-service/cmd/api/router/http/books"
 )
 
+const (
+	TEMP_DIRECTORY = "./tmp"
+)
+
 func main() {
+	// * Crea un directorio temporal para guardar archivos
+	err := os.Mkdir(TEMP_DIRECTORY, os.ModePerm)
+	if err != nil {
+		panic(err)
+	}
+	defer os.RemoveAll(TEMP_DIRECTORY)
+
 	config := config.LoadConfig()
 
 	db, err := database.Connect(&config.Datasource)

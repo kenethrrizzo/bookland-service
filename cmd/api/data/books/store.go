@@ -39,7 +39,39 @@ func (s *Store) GetAllBooks() ([]books.Book, error) {
 		appErr := domainErrors.NewAppError(errors.Wrap(err, listError), domainErrors.RepositoryError)
 		return nil, appErr
 	}
+	defer res.Close()
 
+	var booksDomain []books.Book
+
+	for res.Next() {
+		var bookRetrieved Book
+
+		err := res.Scan(&bookRetrieved.Id, &bookRetrieved.Name, &bookRetrieved.Author, &bookRetrieved.CoverPage, &bookRetrieved.Synopsis, &bookRetrieved.Price, &bookRetrieved.CreatedAt, &bookRetrieved.UpdatedAt)
+		if err != nil {
+			appErr := domainErrors.NewAppErrorWithType(domainErrors.MapError)
+			return nil, appErr
+		}
+
+		booksDomain = append(booksDomain, *toDomainModel(&bookRetrieved))
+	}
+
+	return booksDomain, nil
+}
+
+// TODO: Refactorizar código duplicado
+func (s *Store) GetBooksByGenre(genre string) ([]books.Book, error) {
+	sqlSelect := `SELECT b.Id, b.Name, b.Author, b.CoverPage, b.Synopsis, b.Price, b.CreatedAt, b.UpdatedAt FROM Book b
+		INNER JOIN BookGenre bg ON bg.BookId = b.Id AND bg.GenreCode = ?`
+
+	res, err := s.db.Query(sqlSelect, genre)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			appErr := domainErrors.NewAppErrorWithType(domainErrors.NotFound)
+			return nil, appErr
+		}
+		appErr := domainErrors.NewAppError(errors.Wrap(err, listError), domainErrors.RepositoryError)
+		return nil, appErr
+	}
 	defer res.Close()
 
 	var booksDomain []books.Book
@@ -104,7 +136,7 @@ func (s *Store) UpdateBook(book *books.Book) (*books.Book, error) {
 
 	bookEntity := toDBModel(book)
 
-	_, err := s.db.Exec(sqlUpdate, bookEntity.Name, bookEntity.Author, bookEntity.CoverPage, bookEntity.Synopsis, bookEntity.Price, time.Now(), bookEntity.Id)
+	_, err := s.db.Exec(sqlUpdate, bookEntity.Name, bookEntity.Author, bookEntity.CoverPage, bookEntity.Synopsis, bookEntity.Price, time.Now().UTC(), bookEntity.Id)
 	if err != nil {
 		appErr := domainErrors.NewAppError(errors.Wrap(err, updateError), domainErrors.RepositoryError)
 		return nil, appErr
