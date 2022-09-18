@@ -1,10 +1,11 @@
 package books
 
 type BookResponse struct {
-	Id        int     `json:"id"`
-	Name      string  `json:"name"`
-	Author    int     `json:"author"`
-	CoverPage string  `json:"coverpage"`
-	Synopsis  string  `json:"synopsis"`
-	Price     float64 `json:"price"`
+	ID        int      `json:"id"`
+	Name      string   `json:"name"`
+	Author    int      `json:"author"`
+	Genres    []string `json:"genres"`
+	CoverPage string   `json:"coverpage"`
+	Synopsis  string   `json:"synopsis"`
+	Price     float64  `json:"price"`
 }

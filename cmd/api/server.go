@@ -10,9 +10,12 @@ import (
 	"github.com/kenethrrizzo/bookland-service/cmd/api/data/connections/database"
 	"github.com/kenethrrizzo/bookland-service/cmd/api/data/connections/storage"
 	filebookRepository "github.com/kenethrrizzo/bookland-service/cmd/api/data/files"
+	userRepository "github.com/kenethrrizzo/bookland-service/cmd/api/data/users"
 	bookDomain "github.com/kenethrrizzo/bookland-service/cmd/api/domain/books"
+	userDomain "github.com/kenethrrizzo/bookland-service/cmd/api/domain/users"
 	router "github.com/kenethrrizzo/bookland-service/cmd/api/router/http"
-	bookHandler "github.com/kenethrrizzo/bookland-service/cmd/api/router/http/books"
+	bookRouter "github.com/kenethrrizzo/bookland-service/cmd/api/router/http/books"
+	userRouter "github.com/kenethrrizzo/bookland-service/cmd/api/router/http/users"
 )
 
 const (
@@ -45,9 +48,14 @@ func main() {
 	/* books */
 	bookRepo := bookRepository.NewStore(db)
 	bookService := bookDomain.NewService(bookRepo, fileRepo)
-	bookHandler := bookHandler.NewHandler(bookService)
+	bookHandler := bookRouter.NewHandler(bookService)
 
-	httpRouter := router.NewHTTPHandler(bookHandler)
+	/* users */
+	userRepo := userRepository.NewStore(db)
+	userService := userDomain.NewService(userRepo)
+	userHandler := userRouter.NewHandler(userService)
+
+	httpRouter := router.NewHTTPHandler(bookHandler, userHandler)
 
 	err = http.ListenAndServe(fmt.Sprintf(":%s", config.Server.Port), httpRouter)
 	if err != nil {

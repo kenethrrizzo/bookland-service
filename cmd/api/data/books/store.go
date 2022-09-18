@@ -28,8 +28,10 @@ func NewStore(db *sql.DB) *Store {
 }
 
 func (s *Store) GetAllBooks() ([]books.Book, error) {
-	sqlSelect := "SELECT Id, Name, Author, CoverPage, Synopsis, Price, CreatedAt, UpdatedAt FROM Book"
+	var booksDomain []books.Book
 
+	sqlSelect := `SELECT b.Id, b.Name, b.Author, b.CoverPage, b.Synopsis, b.Price, b.CreatedAt, b.UpdatedAt, group_concat(bg.GenreCode) 
+		FROM Book b INNER JOIN BookGenre bg ON bg.BookId = b.Id GROUP BY b.Id`
 	res, err := s.db.Query(sqlSelect)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -41,28 +43,27 @@ func (s *Store) GetAllBooks() ([]books.Book, error) {
 	}
 	defer res.Close()
 
-	var booksDomain []books.Book
-
 	for res.Next() {
-		var bookRetrieved Book
+		var book Book
 
-		err := res.Scan(&bookRetrieved.Id, &bookRetrieved.Name, &bookRetrieved.Author, &bookRetrieved.CoverPage, &bookRetrieved.Synopsis, &bookRetrieved.Price, &bookRetrieved.CreatedAt, &bookRetrieved.UpdatedAt)
+		err := res.Scan(&book.ID, &book.Name, &book.Author, &book.CoverPage, &book.Synopsis, &book.Price, &book.CreatedAt, &book.UpdatedAt, &book.Genres)
 		if err != nil {
 			appErr := domainErrors.NewAppErrorWithType(domainErrors.MapError)
 			return nil, appErr
 		}
 
-		booksDomain = append(booksDomain, *toDomainModel(&bookRetrieved))
+		booksDomain = append(booksDomain, *bookSchemaToBookDomain(&book))
 	}
 
 	return booksDomain, nil
 }
 
-// TODO: Refactorizar código duplicado
+// TODO: CORREGIR PARA QUE APAREZCAN TODOS LOS CODES
 func (s *Store) GetBooksByGenre(genre string) ([]books.Book, error) {
-	sqlSelect := `SELECT b.Id, b.Name, b.Author, b.CoverPage, b.Synopsis, b.Price, b.CreatedAt, b.UpdatedAt FROM Book b
-		INNER JOIN BookGenre bg ON bg.BookId = b.Id AND bg.GenreCode = ?`
+	var booksDomain []books.Book
 
+	sqlSelect := `SELECT b.Id, b.Name, b.Author, b.CoverPage, b.Synopsis, b.Price, b.CreatedAt, b.UpdatedAt, group_concat(bg.GenreCode) as 'Genres'
+		FROM Book b INNER JOIN BookGenre bg ON bg.BookId = b.Id WHERE bg.GenreCode = ? GROUP BY b.Id`
 	res, err := s.db.Query(sqlSelect, genre)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -74,29 +75,25 @@ func (s *Store) GetBooksByGenre(genre string) ([]books.Book, error) {
 	}
 	defer res.Close()
 
-	var booksDomain []books.Book
-
 	for res.Next() {
-		var bookRetrieved Book
-
-		err := res.Scan(&bookRetrieved.Id, &bookRetrieved.Name, &bookRetrieved.Author, &bookRetrieved.CoverPage, &bookRetrieved.Synopsis, &bookRetrieved.Price, &bookRetrieved.CreatedAt, &bookRetrieved.UpdatedAt)
+		var book Book
+		err := res.Scan(&book.ID, &book.Name, &book.Author, &book.CoverPage, &book.Synopsis, &book.Price, &book.CreatedAt, &book.UpdatedAt, &book.Genres)
 		if err != nil {
 			appErr := domainErrors.NewAppErrorWithType(domainErrors.MapError)
 			return nil, appErr
 		}
 
-		booksDomain = append(booksDomain, *toDomainModel(&bookRetrieved))
+		booksDomain = append(booksDomain, *bookSchemaToBookDomain(&book))
 	}
 
 	return booksDomain, nil
 }
 
 func (s *Store) GetBookByID(id int) (*books.Book, error) {
+	var book Book
+
 	sqlSelect := "SELECT Id, Name, Author, CoverPage, Synopsis, Price, CreatedAt, UpdatedAt FROM Book WHERE Id = ?"
-
-	var bookRetrieved Book
-
-	err := s.db.QueryRow(sqlSelect, id).Scan(&bookRetrieved.Id, &bookRetrieved.Name, &bookRetrieved.Author, &bookRetrieved.CoverPage, &bookRetrieved.Synopsis, &bookRetrieved.Price, &bookRetrieved.CreatedAt, &bookRetrieved.UpdatedAt)
+	err := s.db.QueryRow(sqlSelect, id).Scan(&book.ID, &book.Name, &book.Author, &book.CoverPage, &book.Synopsis, &book.Price, &book.CreatedAt, &book.UpdatedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			appErr := domainErrors.NewAppErrorWithType(domainErrors.NotFound)
@@ -106,14 +103,13 @@ func (s *Store) GetBookByID(id int) (*books.Book, error) {
 		return nil, appErr
 	}
 
-	return toDomainModel(&bookRetrieved), nil
+	return bookSchemaToBookDomain(&book), nil
 }
 
 func (s *Store) CreateBook(book *books.Book) (*books.Book, error) {
+	bookEntity := bookDomainToBookSchema(book)
+
 	sqlInsert := "INSERT INTO Book (Name, Author, CoverPage, Synopsis, Price) values (?, ?, ?, ?, ?)"
-
-	bookEntity := toDBModel(book)
-
 	res, err := s.db.Exec(sqlInsert, bookEntity.Name, bookEntity.Author, bookEntity.CoverPage, bookEntity.Synopsis, bookEntity.Price)
 	if err != nil {
 		appErr := domainErrors.NewAppError(errors.Wrap(err, createError), domainErrors.RepositoryError)
@@ -126,20 +122,55 @@ func (s *Store) CreateBook(book *books.Book) (*books.Book, error) {
 		return nil, appErr
 	}
 
-	book.Id = int(lastId)
+	book.ID = int(lastId)
+
+	if len(book.Genres) == 1 && book.Genres[0] == "" {
+		return book, nil
+	}
+
+	for _, genre := range book.Genres {
+		bookGenreEntity := &BookGenre{
+			BookID:    book.ID,
+			GenreCode: genre,
+		}
+
+		sqlInsert = "INSERT INTO BookGenre (BookId, GenreCode) values (?, ?)"
+		_, err = s.db.Exec(sqlInsert, bookGenreEntity.BookID, bookGenreEntity.GenreCode)
+		if err != nil {
+			appErr := domainErrors.NewAppError(errors.Wrap(err, createError), domainErrors.RepositoryError)
+			return nil, appErr
+		}
+	}
 
 	return book, nil
 }
 
 func (s *Store) UpdateBook(book *books.Book) (*books.Book, error) {
+	bookEntity := bookDomainToBookSchema(book)
+
 	sqlUpdate := "UPDATE Book SET Name = ?, Author = ?, CoverPage = ?, Synopsis = ?, Price = ?, UpdatedAt = ? WHERE Id = ?"
-
-	bookEntity := toDBModel(book)
-
-	_, err := s.db.Exec(sqlUpdate, bookEntity.Name, bookEntity.Author, bookEntity.CoverPage, bookEntity.Synopsis, bookEntity.Price, time.Now().UTC(), bookEntity.Id)
+	_, err := s.db.Exec(sqlUpdate, bookEntity.Name, bookEntity.Author, bookEntity.CoverPage, bookEntity.Synopsis, bookEntity.Price, time.Now().UTC(), bookEntity.ID)
 	if err != nil {
 		appErr := domainErrors.NewAppError(errors.Wrap(err, updateError), domainErrors.RepositoryError)
 		return nil, appErr
+	}
+
+	if len(book.Genres) == 1 && book.Genres[0] == "" {
+		return book, nil
+	}
+
+	for _, genre := range book.Genres {
+		bookGenreEntity := &BookGenre{
+			BookID:    book.ID,
+			GenreCode: genre,
+		}
+
+		sqlUpdate = "UPDATE BookGenre SET GenreCode = ? WHERE BookId = ?"
+		_, err = s.db.Exec(sqlUpdate, bookGenreEntity.GenreCode, bookGenreEntity.BookID)
+		if err != nil {
+			appErr := domainErrors.NewAppError(errors.Wrap(err, updateError), domainErrors.RepositoryError)
+			return nil, appErr
+		}
 	}
 
 	return book, nil
@@ -147,7 +178,6 @@ func (s *Store) UpdateBook(book *books.Book) (*books.Book, error) {
 
 func (s *Store) DeleteBook(id int) error {
 	sqlDelete := "UPDATE Book SET Status = ? WHERE Id = ?"
-
 	_, err := s.db.Exec(sqlDelete, "I", id)
 	if err != nil {
 		appErr := domainErrors.NewAppError(errors.Wrap(err, deleteError), domainErrors.RepositoryError)

@@ -35,6 +35,8 @@ func (s *Service) GetBookByID(id int) (*Book, error) {
 }
 
 func (s *Service) RegisterNewBook(book *Book) (*Book, error) {
+	validateGenre(book.Genres)
+
 	if book.CoverPage != "" {
 		coverPageURL, err := s.fileRepo.UploadFile(book.CoverPage)
 		if err != nil {
@@ -48,7 +50,9 @@ func (s *Service) RegisterNewBook(book *Book) (*Book, error) {
 }
 
 func (s *Service) UpdateBook(book *Book, bookID int) (*Book, error) {
-	book.Id = bookID
+	validateGenre(book.Genres)
+
+	book.ID = bookID
 
 	if book.CoverPage != "" {
 		coverPageURL, err := s.fileRepo.UploadFile(book.CoverPage)
