@@ -47,9 +47,7 @@ func (s *Service) Login(user *User) (*Authentication, error) {
 		return nil, domainErrors.NewAppErrorWithType(domainErrors.UnauthorizedError)
 	}
 
-	return &Authentication{
-		AccessToken: "token",
-	}, nil
+	return createJWT(user)
 }
 
 func hashPassword(password string) (string, error) {
