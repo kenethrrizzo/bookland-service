@@ -15,6 +15,9 @@ const (
 	// Indica un error en el mapeo de datos
 	MapError        = "MapError"
 	mapErrorMessage = "error en mapeo de datos"
+	// Indica que no está autorizado
+	UnauthorizedError        = "UnauthorizedError"
+	unauthorizedErrorMessage = "error al autenticarse"
 )
 
 type AppError struct {
@@ -41,6 +44,8 @@ func NewAppErrorWithType(errType string) *AppError {
 		err = errors.New(repositoryErrorMessage)
 	case MapError:
 		err = errors.New(mapErrorMessage)
+	case UnauthorizedError:
+		err = errors.New(unauthorizedErrorMessage)
 	}
 
 	return &AppError{
