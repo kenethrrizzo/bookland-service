@@ -23,12 +23,15 @@ func LoadConfig() Config {
 		panic(err)
 	}
 
+	viper.Set("secret", config.Secret)
+
 	return config
 }
 
 type Config struct {
 	Server     Server     `mapstruct:"server"`
 	Datasource Datasource `mapstruct:"datasource"`
+	Secret     string     `mapstruct:"secret"`
 }
 
 type Server struct {

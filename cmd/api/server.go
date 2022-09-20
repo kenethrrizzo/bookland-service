@@ -24,7 +24,7 @@ const (
 
 func main() {
 	// * Crea un directorio temporal para guardar archivos
-	err := os.Mkdir(TEMP_DIRECTORY, os.ModePerm)
+	err := os.MkdirAll(TEMP_DIRECTORY, os.ModePerm)
 	if err != nil {
 		panic(err)
 	}

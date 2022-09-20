@@ -5,10 +5,9 @@ import (
 
 	"github.com/golang-jwt/jwt/v4"
 	domainErrors "github.com/kenethrrizzo/bookland-service/cmd/api/domain/errors"
+	"github.com/spf13/viper"
 	"golang.org/x/crypto/bcrypt"
 )
-
-var SECRET = []byte("texto-super-secreto") // Debe estar en variables de entorno
 
 type UserService interface {
 	Register(*User) (*Authentication, error)
@@ -50,6 +49,8 @@ func (s *Service) Login(user *User) (*Authentication, error) {
 	return createJWT(user)
 }
 
+// * Functions
+
 func hashPassword(password string) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
 	return string(bytes), err
@@ -57,7 +58,7 @@ func hashPassword(password string) (string, error) {
 
 func checkPasswordHash(password, hash string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-	return err != nil
+	return err == nil
 }
 
 func createJWT(user *User) (*Authentication, error) {
@@ -69,7 +70,7 @@ func createJWT(user *User) (*Authentication, error) {
 	claims["userName"] = user.Username
 	claims["userEmail"] = user.Email
 
-	tokenStr, err := token.SignedString(SECRET)
+	tokenStr, err := token.SignedString([]byte(viper.GetString("secret")))
 	if err != nil {
 		return nil, domainErrors.NewAppErrorWithType(domainErrors.UnknownError)
 	}
