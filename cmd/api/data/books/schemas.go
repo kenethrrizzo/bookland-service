@@ -8,7 +8,7 @@ import (
 type Book struct {
 	ID        int            `db:"Id"`
 	Name      string         `db:"Name"`
-	Author    int            `db:"Author"`
+	Author    string         `db:"Author"`
 	Genres    string         `db:"Genres"`
 	CoverPage sql.NullString `db:"CoverPage"`
 	Synopsis  sql.NullString `db:"Synopsis"`

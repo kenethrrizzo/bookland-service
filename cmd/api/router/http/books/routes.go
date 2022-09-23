@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/kenethrrizzo/bookland-service/cmd/api/domain/books"
 	httpUtil "github.com/kenethrrizzo/bookland-service/cmd/api/utils/http"
+	"github.com/sirupsen/logrus"
 )
 
 type BookHandler struct {
@@ -22,14 +23,14 @@ func NewHandler(svc books.BookService) *BookHandler {
 func ErrJSON(err error) *Response {
 	return &Response{
 		Status: "ERROR",
-		Data:   gin.H{"error": err.Error()},
+		Result: gin.H{"error": err.Error()},
 	}
 }
 
 func OkJSON(data interface{}) *Response {
 	return &Response{
 		Status: "OK",
-		Data:   data,
+		Result: data,
 	}
 }
 
@@ -128,6 +129,8 @@ func (h *BookHandler) UpdateBook(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusBadRequest, ErrJSON(err))
 		return
 	}
+
+	logrus.Info("BookRequest: ", bookRequest)
 
 	book := bookRequestToBookDomain(&bookRequest)
 	if bookRequest.Coverpage != nil {

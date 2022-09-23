@@ -14,7 +14,7 @@ import (
 func ErrJSON(err error) *Response {
 	return &Response{
 		Status: "ERROR",
-		Data:   gin.H{"error": err.Error()},
+		Result: gin.H{"error": err.Error()},
 	}
 }
 

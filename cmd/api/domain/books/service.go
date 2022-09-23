@@ -63,6 +63,8 @@ func (s *Service) UpdateBook(book *Book, bookID int) (*Book, error) {
 		book.CoverPage = *coverPageURL
 	}
 
+	// todo: corregir coverpage
+
 	return s.bookRepo.UpdateBook(book)
 }
 

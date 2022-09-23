@@ -19,14 +19,14 @@ func NewHandler(service userDomain.UserService) *UserHandler {
 func ErrJSON(err error) *Response {
 	return &Response{
 		Status: "ERROR",
-		Data:   gin.H{"error": err.Error()},
+		Result: gin.H{"error": err.Error()},
 	}
 }
 
 func OkJSON(data interface{}) *Response {
 	return &Response{
 		Status: "OK",
-		Data:   data,
+		Result: data,
 	}
 }
 

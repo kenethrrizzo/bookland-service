@@ -5,9 +5,9 @@ import (
 )
 
 type BookRequest struct {
-	ID        *int                  `form:"id"`  // TODO: eliminar
+	ID        *int                  `form:"id"` // TODO: eliminar
 	Name      string                `form:"name"`
-	Author    int                   `form:"author"`
+	Author    string                `form:"author"`
 	Genres    string                `form:"genres"`
 	Coverpage *multipart.FileHeader `form:"coverpage"`
 	Synopsis  string                `form:"synopsis"`

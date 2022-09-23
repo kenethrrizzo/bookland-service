@@ -32,11 +32,13 @@ func main() {
 
 	config := config.LoadConfig()
 
+	// Coneccion a la base de datos
 	db, err := database.Connect(&config.Datasource)
 	if err != nil {
 		panic(err)
 	}
 
+	// Coneccion a la nube
 	s3client, err := storage.Connect()
 	if err != nil {
 		panic(err)
